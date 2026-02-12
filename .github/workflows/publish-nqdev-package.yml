@@ -1,32 +1,35 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Workflow Publish n8n-nodes-nqdev Package to GitHub Packages
+# Workflow Publish n8n-nodes-nqdev Package to GitHub Packages & npmjs
 # ---------------------------------------------------
 # https://docs.github.com/en/actions/use-cases-and-examples/publishing-packages/publishing-nodejs-packages
 # https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-name: 'Publish: n8n-nodes-nqdev to GitHub Packages'
-run-name: 'Publish n8n-nodes-nqdev to GitHub Packages by @${{ github.actor }} on ${{ github.event_name }}'
+name: 'Publish: n8n-nodes-nqdev to Registries'
+run-name: 'Publish n8n-nodes-nqdev by @${{ github.actor }} on ${{ github.event_name }}'
 
 on:
   workflow_dispatch: # Allow manual trigger
   release:
     types: [published] # Run when release is published
 
-# Permissions needed for publishing to GitHub Packages
+# Permissions needed for publishing
 permissions:
-  contents: read
-  packages: write
+  contents: write  # Needed for creating tags
+  packages: write  # Needed for GitHub Packages
 
 env:
   SERVER: production
   PREFIX: 0.1
   VERSION: 0.1.${{ github.run_number }}
-  PACKAGE_NAME: '@nqdev-group/n8n-nodes-nqdev'
+  SCOPED_PACKAGE_NAME: '@nqdev-group/n8n-nodes-nqdev'
+  UNSCOPED_PACKAGE_NAME: 'n8n-nodes-nqdev'
 
 jobs:
+  # Job 1: Publish to GitHub Packages
   publish-github-packages:
     runs-on: ubuntu-latest
+    name: Publish to GitHub Packages
 
     steps:
       # 1. Checkout code from repository
@@ -52,14 +55,14 @@ jobs:
           # Set new VERSION for environment
           echo "VERSION=$BASE_VERSION.${{ github.run_number }}" >> $GITHUB_ENV
 
-      # 3. Update package.json with scoped name and version
+      # 3. Update package.json with scoped name and version for GitHub Packages
       - name: Update package.json for GitHub Packages
         working-directory: packages/n8n-nodes-nqdev
         run: |
           # Update version and name (scoped for GitHub Packages)
-          jq '.version = "${{ env.VERSION }}" | .name = "${{ env.PACKAGE_NAME }}"' package.json > package.tmp.json && mv package.tmp.json package.json
+          jq '.version = "${{ env.VERSION }}" | .name = "${{ env.SCOPED_PACKAGE_NAME }}"' package.json > package.tmp.json && mv package.tmp.json package.json
           
-          # Add publishConfig and repository fields if not present
+          # Add publishConfig and repository fields
           jq '. + {
             "publishConfig": {
               "registry": "https://npm.pkg.github.com/",
@@ -119,28 +122,130 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 10. Create and push git tag
-      - name: Create and push tag
+  # Job 2: Publish to npmjs
+  publish-npmjs:
+    runs-on: ubuntu-latest
+    name: Publish to npmjs
+
+    steps:
+      # 1. Checkout code from repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Get original package name and version
+      - name: Get original package metadata
+        working-directory: packages/n8n-nodes-nqdev
+        run: |
+          # Get original version from package.json
+          ORIGINAL_VERSION=$(jq -r '.version' package.json)
+          echo "ORIGINAL_VERSION=$ORIGINAL_VERSION"
+
+          # Create BASE_VERSION from ORIGINAL_VERSION (first two parts)
+          BASE_VERSION=$(echo "$ORIGINAL_VERSION" | cut -d. -f1-2)
+          echo "BASE_VERSION=$BASE_VERSION" >> $GITHUB_ENV
+
+          # Set new VERSION for environment
+          echo "VERSION=$BASE_VERSION.${{ github.run_number }}" >> $GITHUB_ENV
+
+      # 3. Update package.json with version for npmjs (keep original unscoped name)
+      - name: Update package.json for npmjs
+        working-directory: packages/n8n-nodes-nqdev
+        run: |
+          # Update only version, keep original unscoped name
+          jq '.version = "${{ env.VERSION }}"' package.json > package.tmp.json && mv package.tmp.json package.json
+          
+          # Update publishConfig for npmjs
+          jq '.publishConfig = {
+            "registry": "https://registry.npmjs.org/",
+            "access": "public"
+          }' package.json > package.tmp.json && mv package.tmp.json package.json
+
+      # 4. Setup Node.js with npmjs registry
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.16'
+          registry-url: 'https://registry.npmjs.org/'
+
+      # 5. Setup pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.22.0
+
+      # 6. Install dependencies
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      # 7. Build workspace dependencies first
+      - name: Build workspace dependencies
+        run: |
+          # Build n8n-workflow package first (required dependency)
+          pnpm --filter n8n-workflow build
+          
+      # 8. Build n8n-nodes-nqdev package
+      - name: Build n8n-nodes-nqdev package
+        working-directory: packages/n8n-nodes-nqdev
+        run: |
+          # Run typecheck
+          pnpm typecheck || true
+          
+          # Build the package
+          pnpm build
+
+      # 9. Publish to npmjs
+      - name: Publish to npmjs
+        working-directory: packages/n8n-nodes-nqdev
         if: success()
+        run: pnpm publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Job 3: Create git tag and summary (runs after both publish jobs)
+  create-tag-and-summary:
+    runs-on: ubuntu-latest
+    needs: [publish-github-packages, publish-npmjs]
+    if: success()
+    
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Calculate version
+      - name: Calculate version
+        working-directory: packages/n8n-nodes-nqdev
+        run: |
+          ORIGINAL_VERSION=$(jq -r '.version' package.json)
+          BASE_VERSION=$(echo "$ORIGINAL_VERSION" | cut -d. -f1-2)
+          echo "VERSION=$BASE_VERSION.${{ github.run_number }}" >> $GITHUB_ENV
+
+      # 3. Create and push git tag
+      - name: Create and push tag
         run: |
           git config --local user.name "GitHub Actions"
           git config --local user.email "github-actions@github.com"
           git tag -a nqdev-v${{ env.VERSION }} -m "Release n8n-nodes-nqdev v${{ env.VERSION }}"
           git push origin nqdev-v${{ env.VERSION }}
 
-      # 11. Create release notes
+      # 4. Create release summary
       - name: Create Release Summary
-        if: success()
         run: |
-          echo "## 📦 Package Published Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "## 📦 Package Published Successfully to Both Registries" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Package:** \`${{ env.PACKAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** \`${{ env.VERSION }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Registry:** GitHub Packages" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Installation" >> $GITHUB_STEP_SUMMARY
+          echo "### 🐙 GitHub Packages" >> $GITHUB_STEP_SUMMARY
+          echo "**Package:** \`@nqdev-group/n8n-nodes-nqdev\`" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "npm install ${{ env.PACKAGE_NAME }}@${{ env.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "npm install @nqdev-group/n8n-nodes-nqdev@${{ env.VERSION }}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Tag:** \`nqdev-v${{ env.VERSION }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "### 📮 npmjs" >> $GITHUB_STEP_SUMMARY
+          echo "**Package:** \`n8n-nodes-nqdev\`" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "npm install n8n-nodes-nqdev@${{ env.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Git Tag:** \`nqdev-v${{ env.VERSION }}\`" >> $GITHUB_STEP_SUMMARY
+

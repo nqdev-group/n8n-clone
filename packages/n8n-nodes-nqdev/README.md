@@ -12,18 +12,30 @@ Connect to eSMS.vn API to send:
 
 ## Installation
 
-### From GitHub Packages
+The package is available from two registries:
 
-This package is published to GitHub Packages. To install:
+### Option 1: From npmjs (Recommended)
 
-1. **Configure npm for GitHub Packages** - Create or update `.npmrc` in your project:
+```bash
+npm install n8n-nodes-nqdev
+```
+
+Or with pnpm:
+
+```bash
+pnpm add n8n-nodes-nqdev
+```
+
+### Option 2: From GitHub Packages
+
+**Configure npm for GitHub Packages** - Create or update `.npmrc` in your project:
 
 ```bash
 @nqdev-group:registry=https://npm.pkg.github.com/
 //npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
 ```
 
-2. **Install the package**:
+**Install the package**:
 
 ```bash
 npm install @nqdev-group/n8n-nodes-nqdev
@@ -39,7 +51,7 @@ pnpm add @nqdev-group/n8n-nodes-nqdev
 
 1. In n8n, go to **Settings** → **Community Nodes**
 2. Click **Install a community node**
-3. Enter: `@nqdev-group/n8n-nodes-nqdev`
+3. Enter: `n8n-nodes-nqdev` (for npmjs) or `@nqdev-group/n8n-nodes-nqdev` (for GitHub Packages)
 4. Click **Install**
 5. Restart n8n
 

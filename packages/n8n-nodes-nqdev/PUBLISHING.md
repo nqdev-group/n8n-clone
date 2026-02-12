@@ -1,10 +1,15 @@
-# Publishing n8n-nodes-nqdev to GitHub Packages
+# Publishing n8n-nodes-nqdev to Registries
 
-This guide explains how to publish the `n8n-nodes-nqdev` package to GitHub Packages.
+This guide explains how to publish the `n8n-nodes-nqdev` package to both GitHub Packages and npmjs.
 
 ## Overview
 
-The package is published to GitHub Packages under the scope `@nqdev-group/n8n-nodes-nqdev`. 
+The package is published to **two registries simultaneously**:
+
+1. **GitHub Packages**: `@nqdev-group/n8n-nodes-nqdev` (scoped)
+2. **npmjs**: `n8n-nodes-nqdev` (unscoped)
+
+Both registries receive the same version number, ensuring consistency across platforms.
 
 ## Automated Publishing via GitHub Actions
 
@@ -12,13 +17,14 @@ The package is published to GitHub Packages under the scope `@nqdev-group/n8n-no
 
 The package is automatically published when:
 
-1. **Manual Trigger**: Go to Actions → "Publish: n8n-nodes-nqdev to GitHub Packages" → "Run workflow"
+1. **Manual Trigger**: Go to Actions → "Publish: n8n-nodes-nqdev to Registries" → "Run workflow"
 2. **Release Published**: When a new GitHub release is published
 
 ### Workflow Process
 
 The workflow (`.github/workflows/publish-nqdev-package.yml`) performs the following steps:
 
+#### Job 1: Publish to GitHub Packages
 1. **Checkout Code**: Retrieves the latest code from the repository
 2. **Version Management**: 
    - Reads the base version from `package.json`
@@ -36,9 +42,46 @@ The workflow (`.github/workflows/publish-nqdev-package.yml`) performs the follow
 5. **Publish**:
    - Publishes to GitHub Packages registry
    - Uses `GITHUB_TOKEN` for authentication
-6. **Tagging**:
+
+#### Job 2: Publish to npmjs (runs in parallel)
+1. **Checkout Code**: Retrieves the latest code from the repository
+2. **Version Management**: Same version as GitHub Packages job
+3. **Package Configuration**:
+   - Keeps original package name `n8n-nodes-nqdev` (unscoped)
+   - Adds npmjs registry configuration
+   - Updates version number
+4. **Build Process**:
+   - Installs all dependencies
+   - Builds workspace dependencies (n8n-workflow)
+   - Builds the n8n-nodes-nqdev package
+   - Runs type checking
+5. **Publish**:
+   - Publishes to npmjs registry
+   - Uses `NPM_TOKEN` secret for authentication
+
+#### Job 3: Create Tag and Summary (runs after both jobs)
+1. **Tagging**:
    - Creates a git tag: `nqdev-v<version>`
    - Pushes the tag to the repository
+2. **Summary**:
+   - Generates release summary showing both registries
+   - Includes installation instructions for both
+
+### Required Secrets
+
+The workflow requires the following secrets to be configured in GitHub repository settings:
+
+1. **GITHUB_TOKEN** - Automatically provided by GitHub Actions (for GitHub Packages)
+2. **NPM_TOKEN** - Must be manually configured (for npmjs)
+   - Go to repository Settings → Secrets and variables → Actions
+   - Add new secret named `NPM_TOKEN`
+   - Value should be your npmjs access token
+
+To get an npmjs token:
+1. Log in to [npmjs.com](https://www.npmjs.com/)
+2. Go to Account → Access Tokens
+3. Generate a new token (Automation type recommended)
+4. Copy the token and add it to GitHub secrets
 
 ## Manual Publishing
 
@@ -92,9 +135,28 @@ mv package.tmp.json package.json
 
 ## Installing the Package
 
-Users can install the published package from GitHub Packages:
+The package is available from **two registries**. Choose the one that best fits your needs:
 
-### Configure npm for GitHub Packages
+### Option 1: From npmjs (Recommended - No Authentication Required)
+
+This is the easiest option for most users:
+
+```bash
+# Install latest version
+npm install n8n-nodes-nqdev@latest
+
+# Or with pnpm
+pnpm add n8n-nodes-nqdev@latest
+
+# Install specific version
+npm install n8n-nodes-nqdev@0.1.123
+```
+
+### Option 2: From GitHub Packages (Requires Authentication)
+
+If you prefer to use GitHub Packages:
+
+#### Configure npm for GitHub Packages
 
 Create or update `.npmrc` in your project:
 
@@ -103,27 +165,30 @@ Create or update `.npmrc` in your project:
 //npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
 ```
 
-### Install the package
+#### Install the package
 
 ```bash
+# Install latest version
 npm install @nqdev-group/n8n-nodes-nqdev@latest
-```
 
-Or with pnpm:
-
-```bash
+# Or with pnpm
 pnpm add @nqdev-group/n8n-nodes-nqdev@latest
-```
 
-### Install specific version
-
-```bash
+# Install specific version
 npm install @nqdev-group/n8n-nodes-nqdev@0.1.123
 ```
 
 ## Using in n8n
 
-### As Community Node
+### As Community Node (npmjs - Recommended)
+
+1. In n8n, go to **Settings** → **Community Nodes**
+2. Click **Install a community node**
+3. Enter: `n8n-nodes-nqdev`
+4. Click **Install**
+5. Restart n8n
+
+### As Community Node (GitHub Packages - Alternative)
 
 1. In n8n, go to **Settings** → **Community Nodes**
 2. Click **Install a community node**
@@ -131,9 +196,19 @@ npm install @nqdev-group/n8n-nodes-nqdev@0.1.123
 4. Click **Install**
 5. Restart n8n
 
+Note: Using GitHub Packages may require additional authentication configuration in your n8n installation.
+
 ### Via npm/pnpm in n8n installation
 
 If you have a self-hosted n8n instance:
+
+**Using npmjs** (recommended):
+```bash
+cd ~/.n8n
+npm install n8n-nodes-nqdev
+```
+
+**Using GitHub Packages**:
 
 ```bash
 cd ~/.n8n
