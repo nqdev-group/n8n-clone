@@ -2,13 +2,33 @@
 
 This is an n8n community node package for integrating with NQDev external services.
 
-## Features
+## Available Nodes
 
-### eSMS.vn Integration
-
+### eSMS Node
 Connect to eSMS.vn API to send:
 - SMS OTP/CSKH messages
 - Zalo ZNS messages
+
+### NQDev Node
+General NQDev integration hub (placeholder - use specific service nodes like eSMS)
+
+## Package Structure
+
+The package is organized for maintainability and extensibility:
+
+```
+packages/n8n-nodes-nqdev/
+├── nodes/
+│   ├── Esms/              # eSMS.vn integration
+│   └── Nqdev/             # General placeholder
+├── utils/
+│   ├── HttpClient.ts      # Reusable HTTP utilities
+│   └── Logger.ts          # Logging utilities
+└── credentials/
+    └── EsmsApi.credentials.ts
+```
+
+For detailed information about the package structure and refactoring, see [REFACTORING.md](./REFACTORING.md).
 
 ## Installation
 
