@@ -1,4 +1,4 @@
-# GitHub Packages Publishing Workflow - Quick Reference
+# Dual Publishing Workflow - Quick Reference
 
 ## Workflow Diagram
 
@@ -11,53 +11,71 @@
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
+               ┌──────────────┴──────────────┐
+               │                             │
+               ▼                             ▼
+┌──────────────────────────────┐  ┌──────────────────────────────┐
+│    JOB 1: GITHUB PACKAGES    │  │      JOB 2: NPMJS           │
+│    (Parallel Execution)      │  │    (Parallel Execution)     │
+└──────────────────────────────┘  └──────────────────────────────┘
+
 ┌─────────────────────────────────────────────────────────────────┐
-│                     CHECKOUT & SETUP                            │
+│             JOB 1: PUBLISH TO GITHUB PACKAGES                   │
 ├─────────────────────────────────────────────────────────────────┤
 │  • Checkout code                                                │
 │  • Setup Node.js 22.16 with GitHub Packages registry           │
 │  • Setup pnpm 10.22.0                                           │
+│  • Version: 0.1.<run_number>                                   │
+│  • Package: @nqdev-group/n8n-nodes-nqdev (scoped)             │
+│  • Build workspace dependency: n8n-workflow                     │
+│  • Build n8n-nodes-nqdev package                              │
+│  • Publish to npm.pkg.github.com                               │
+│  • Auth: GITHUB_TOKEN (auto-provided)                          │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                 JOB 2: PUBLISH TO NPMJS                         │
+├─────────────────────────────────────────────────────────────────┤
+│  • Checkout code                                                │
+│  • Setup Node.js 22.16 with npmjs registry                      │
+│  • Setup pnpm 10.22.0                                           │
+│  • Version: 0.1.<run_number> (same as Job 1)                  │
+│  • Package: n8n-nodes-nqdev (unscoped)                         │
+│  • Build workspace dependency: n8n-workflow                     │
+│  • Build n8n-nodes-nqdev package                              │
+│  • Publish to registry.npmjs.org                               │
+│  • Auth: NPM_TOKEN (configured secret)                          │
 └─────────────────────────────────────────────────────────────────┘
                               │
+               ┌──────────────┴──────────────┐
+               │  Both jobs must succeed     │
+               └──────────────┬──────────────┘
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                   VERSION MANAGEMENT                            │
+│          JOB 3: CREATE TAG & SUMMARY (Sequential)               │
 ├─────────────────────────────────────────────────────────────────┤
-│  • Read base version from package.json (e.g., 0.1.0)           │
-│  • Append GitHub run number                                     │
-│  • Generate version: 0.1.<run_number>                          │
-│                                                                  │
-│  Example: 0.1.0 → 0.1.123 (run #123)                          │
+│  • Checkout code                                                │
+│  • Calculate version                                            │
+│  • Create git tag: nqdev-v<version>                            │
+│  • Push tag to repository                                       │
+│  • Generate summary:                                            │
+│    - GitHub Packages: @nqdev-group/n8n-nodes-nqdev            │
+│    - npmjs: n8n-nodes-nqdev                                    │
+│    - Git tag: nqdev-v<version>                                 │
 └─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                  PACKAGE CONFIGURATION                          │
-├─────────────────────────────────────────────────────────────────┤
-│  • Update package name to @nqdev-group/n8n-nodes-nqdev         │
-│  • Update version to generated version                          │
-│  • Add publishConfig for GitHub Packages                        │
-│  • Add repository field                                         │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    BUILD PROCESS                                │
-├─────────────────────────────────────────────────────────────────┤
-│  1. Install all dependencies (pnpm install)                     │
-│  2. Build workspace dependency: n8n-workflow                    │
-│  3. Run typecheck on n8n-nodes-nqdev                           │
-│  4. Build n8n-nodes-nqdev package                              │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      PUBLISH                                    │
-├─────────────────────────────────────────────────────────────────┤
-│  • Configure npm authentication with GITHUB_TOKEN               │
-│  • Publish to https://npm.pkg.github.com/                      │
-│  • Access level: public                                         │
-└─────────────────────────────────────────────────────────────────┘
+```
+
+## Published Packages
+
+### GitHub Packages
+- **Name**: `@nqdev-group/n8n-nodes-nqdev`
+- **Registry**: https://npm.pkg.github.com/
+- **Requires**: GitHub authentication
+
+### npmjs (Recommended)
+- **Name**: `n8n-nodes-nqdev`
+- **Registry**: https://registry.npmjs.org/
+- **Requires**: No authentication
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
