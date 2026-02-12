@@ -1,0 +1,16 @@
+name: n8n-clone
+id: ari:cloud:compass:d080ee26-f21d-4730-84de-98c025104c05:component/e09ef9ad-8d69-4877-b0ee-7395c9ca13a3/071e8454-306c-4d06-a04a-2ba7f5d0f542
+description: Fair-code workflow automation platform with native AI capabilities. Combine visual building with custom code, self-host or cloud, 400+ integrations.
+configVersion: 1
+typeId: SERVICE
+fields:
+  tier: 4
+links:
+  - name: null
+    type: REPOSITORY
+    url: https://github.com/nqdev-group/n8n-clone
+relationships:
+  DEPENDS_ON: []
+labels:
+  - source:github
+customFields: null
