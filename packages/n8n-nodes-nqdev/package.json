@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "description": "n8n nodes for NQDev external services integration",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nqdev-group/n8n-clone.git",
+    "directory": "packages/n8n-nodes-nqdev"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/",
+    "access": "public"
+  },
   "scripts": {
     "clean": "rimraf dist .turbo",
     "copy-nodes-json": "node ../../nodes-base/scripts/copy-nodes-json.js .",

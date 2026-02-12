@@ -1,0 +1,146 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Workflow Publish n8n-nodes-nqdev Package to GitHub Packages
+# ---------------------------------------------------
+# https://docs.github.com/en/actions/use-cases-and-examples/publishing-packages/publishing-nodejs-packages
+# https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+name: 'Publish: n8n-nodes-nqdev to GitHub Packages'
+run-name: 'Publish n8n-nodes-nqdev to GitHub Packages by @${{ github.actor }} on ${{ github.event_name }}'
+
+on:
+  workflow_dispatch: # Allow manual trigger
+  release:
+    types: [published] # Run when release is published
+
+# Permissions needed for publishing to GitHub Packages
+permissions:
+  contents: read
+  packages: write
+
+env:
+  SERVER: production
+  PREFIX: 0.1
+  VERSION: 0.1.${{ github.run_number }}
+  PACKAGE_NAME: '@nqdev-group/n8n-nodes-nqdev'
+
+jobs:
+  publish-github-packages:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code from repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Get original package name and version
+      - name: Get original package metadata
+        working-directory: packages/n8n-nodes-nqdev
+        run: |
+          # Get original name from package.json
+          ORIGINAL_NAME=$(jq -r '.name' package.json)
+          echo "ORIGINAL_NAME=$ORIGINAL_NAME" >> $GITHUB_ENV
+
+          # Get original version from package.json
+          ORIGINAL_VERSION=$(jq -r '.version' package.json)
+          echo "ORIGINAL_VERSION=$ORIGINAL_VERSION"
+
+          # Create BASE_VERSION from ORIGINAL_VERSION (first two parts)
+          BASE_VERSION=$(echo "$ORIGINAL_VERSION" | cut -d. -f1-2)
+          echo "BASE_VERSION=$BASE_VERSION" >> $GITHUB_ENV
+
+          # Set new VERSION for environment
+          echo "VERSION=$BASE_VERSION.${{ github.run_number }}" >> $GITHUB_ENV
+
+      # 3. Update package.json with scoped name and version
+      - name: Update package.json for GitHub Packages
+        working-directory: packages/n8n-nodes-nqdev
+        run: |
+          # Update version and name (scoped for GitHub Packages)
+          jq '.version = "${{ env.VERSION }}" | .name = "${{ env.PACKAGE_NAME }}"' package.json > package.tmp.json && mv package.tmp.json package.json
+          
+          # Add publishConfig and repository fields if not present
+          jq '. + {
+            "publishConfig": {
+              "registry": "https://npm.pkg.github.com/",
+              "access": "public"
+            },
+            "repository": {
+              "type": "git",
+              "url": "git+https://github.com/nqdev-group/n8n-clone.git",
+              "directory": "packages/n8n-nodes-nqdev"
+            }
+          }' package.json > package.tmp.json && mv package.tmp.json package.json
+
+      # 4. Setup Node.js with GitHub Packages registry
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.16'
+          registry-url: 'https://npm.pkg.github.com/'
+          scope: '@nqdev-group'
+
+      # 5. Setup pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.22.0
+
+      # 6. Install dependencies
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      # 7. Build workspace dependencies first
+      - name: Build workspace dependencies
+        run: |
+          # Build n8n-workflow package first (required dependency)
+          pnpm --filter n8n-workflow build
+          
+      # 8. Build n8n-nodes-nqdev package
+      - name: Build n8n-nodes-nqdev package
+        working-directory: packages/n8n-nodes-nqdev
+        run: |
+          # Run typecheck
+          pnpm typecheck || true
+          
+          # Build the package
+          pnpm build
+
+      # 9. Publish to GitHub Packages
+      - name: Publish to GitHub Packages
+        working-directory: packages/n8n-nodes-nqdev
+        if: success()
+        run: |
+          # Configure npm to use GitHub token
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" > ~/.npmrc
+          
+          # Publish the package
+          pnpm publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 10. Create and push git tag
+      - name: Create and push tag
+        if: success()
+        run: |
+          git config --local user.name "GitHub Actions"
+          git config --local user.email "github-actions@github.com"
+          git tag -a nqdev-v${{ env.VERSION }} -m "Release n8n-nodes-nqdev v${{ env.VERSION }}"
+          git push origin nqdev-v${{ env.VERSION }}
+
+      # 11. Create release notes
+      - name: Create Release Summary
+        if: success()
+        run: |
+          echo "## 📦 Package Published Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Package:** \`${{ env.PACKAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ env.VERSION }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Registry:** GitHub Packages" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installation" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "npm install ${{ env.PACKAGE_NAME }}@${{ env.VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** \`nqdev-v${{ env.VERSION }}\`" >> $GITHUB_STEP_SUMMARY

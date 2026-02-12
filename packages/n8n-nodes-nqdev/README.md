@@ -12,7 +12,38 @@ Connect to eSMS.vn API to send:
 
 ## Installation
 
-Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
+### From GitHub Packages
+
+This package is published to GitHub Packages. To install:
+
+1. **Configure npm for GitHub Packages** - Create or update `.npmrc` in your project:
+
+```bash
+@nqdev-group:registry=https://npm.pkg.github.com/
+//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
+```
+
+2. **Install the package**:
+
+```bash
+npm install @nqdev-group/n8n-nodes-nqdev
+```
+
+Or with pnpm:
+
+```bash
+pnpm add @nqdev-group/n8n-nodes-nqdev
+```
+
+### In n8n Community Nodes
+
+1. In n8n, go to **Settings** → **Community Nodes**
+2. Click **Install a community node**
+3. Enter: `@nqdev-group/n8n-nodes-nqdev`
+4. Click **Install**
+5. Restart n8n
+
+For detailed installation and publishing instructions, see [PUBLISHING.md](./PUBLISHING.md).
 
 ## Credentials
 
