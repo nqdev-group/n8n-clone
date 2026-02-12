@@ -32,7 +32,8 @@
       "dist/credentials/EsmsApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/Nqdev/Nqdev.node.js"
+      "dist/nodes/Nqdev/Nqdev.node.js",
+      "dist/nodes/Esms/Esms.node.js"
     ]
   },
   "keywords": [
