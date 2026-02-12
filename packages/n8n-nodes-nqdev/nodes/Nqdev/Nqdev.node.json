@@ -1,0 +1,18 @@
+{
+	"node": "n8n-nodes-nqdev.Nqdev",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Communication"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://developers.esms.vn/"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://developers.esms.vn/esms-api/ham-gui-tin/tin-nhan-sms-otp-cskh"
+			}
+		]
+	}
+}
