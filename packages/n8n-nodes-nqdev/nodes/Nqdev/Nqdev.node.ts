@@ -312,7 +312,7 @@ export class Nqdev implements INodeType {
 								? JSON.parse(templateDataStr) 
 								: templateDataStr;
 						} catch (error) {
-							throw new Error('Invalid JSON in Template Data parameter');
+							throw new Error(`Invalid JSON in Template Data parameter: ${(error as Error).message}`);
 						}
 
 						// Prepare request body
