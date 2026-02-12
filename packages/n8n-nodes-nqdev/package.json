@@ -1,0 +1,59 @@
+{
+  "name": "n8n-nodes-nqdev",
+  "version": "0.1.0",
+  "description": "n8n nodes for NQDev external services integration",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nqdev-group/n8n-clone.git",
+    "directory": "packages/n8n-nodes-nqdev"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/",
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "rimraf dist .turbo",
+    "copy-nodes-json": "node ../../nodes-base/scripts/copy-nodes-json.js .",
+    "dev": "pnpm watch",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --build tsconfig.build.json && pnpm copy-nodes-json",
+    "format": "biome format --write .",
+    "format:check": "biome ci .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "watch": "tsc-watch -p tsconfig.build.json --onCompilationComplete \"pnpm copy-nodes-json\""
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "credentials": [
+      "dist/credentials/EsmsApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Nqdev/Nqdev.node.js",
+      "dist/nodes/Esms/Esms.node.js"
+    ]
+  },
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "nqdev",
+    "esms",
+    "sms",
+    "zalo"
+  ],
+  "author": "NQDev",
+  "license": "MIT",
+  "dependencies": {
+    "n8n-workflow": "workspace:*"
+  },
+  "devDependencies": {
+    "@n8n/eslint-config": "workspace:*",
+    "@n8n/typescript-config": "workspace:*",
+    "eslint": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:"
+  }
+}

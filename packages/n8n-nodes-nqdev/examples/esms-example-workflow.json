@@ -1,0 +1,75 @@
+{
+  "name": "eSMS.vn Example Workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "sms",
+        "operation": "send",
+        "phone": "84987654321",
+        "content": "Mã OTP của bạn là: 123456. Vui lòng không chia sẻ mã này với bất kỳ ai.",
+        "smsType": "4",
+        "brandname": "YourBrand",
+        "sandbox": true
+      },
+      "id": "send-sms",
+      "name": "Send SMS OTP",
+      "type": "n8n-nodes-nqdev.nqdev",
+      "typeVersion": 1,
+      "position": [450, 250],
+      "credentials": {
+        "esmsApi": {
+          "id": "1",
+          "name": "eSMS.vn API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "zalo",
+        "operation": "send",
+        "phone": "84987654321",
+        "templateId": "your-template-id",
+        "templateData": "{\"customer_name\": \"Nguyễn Văn A\", \"order_code\": \"DH12345\", \"delivery_date\": \"20/02/2026\"}",
+        "trackingId": "order-12345",
+        "sandbox": true
+      },
+      "id": "send-zalo",
+      "name": "Send Zalo ZNS",
+      "type": "n8n-nodes-nqdev.nqdev",
+      "typeVersion": 1,
+      "position": [450, 400],
+      "credentials": {
+        "esmsApi": {
+          "id": "1",
+          "name": "eSMS.vn API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Send SMS OTP",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Zalo ZNS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

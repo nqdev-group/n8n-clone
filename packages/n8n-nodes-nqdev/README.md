@@ -1,0 +1,132 @@
+# n8n-nodes-nqdev
+
+This is an n8n community node package for integrating with NQDev external services.
+
+## Available Nodes
+
+### eSMS Node
+Connect to eSMS.vn API to send:
+- SMS OTP/CSKH messages
+- Zalo ZNS messages
+
+### NQDev Node
+General NQDev integration hub (placeholder - use specific service nodes like eSMS)
+
+## Package Structure
+
+The package is organized for maintainability and extensibility:
+
+```
+packages/n8n-nodes-nqdev/
+├── nodes/
+│   ├── Esms/              # eSMS.vn integration
+│   └── Nqdev/             # General placeholder
+├── utils/
+│   ├── HttpClient.ts      # Reusable HTTP utilities
+│   └── Logger.ts          # Logging utilities
+└── credentials/
+    └── EsmsApi.credentials.ts
+```
+
+For detailed information about the package structure and refactoring, see [REFACTORING.md](./REFACTORING.md).
+
+## Installation
+
+The package is available from two registries:
+
+### Option 1: From npmjs (Recommended)
+
+```bash
+npm install n8n-nodes-nqdev
+```
+
+Or with pnpm:
+
+```bash
+pnpm add n8n-nodes-nqdev
+```
+
+### Option 2: From GitHub Packages
+
+**Configure npm for GitHub Packages** - Create or update `.npmrc` in your project:
+
+```bash
+@nqdev-group:registry=https://npm.pkg.github.com/
+//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
+```
+
+**Install the package**:
+
+```bash
+npm install @nqdev-group/n8n-nodes-nqdev
+```
+
+Or with pnpm:
+
+```bash
+pnpm add @nqdev-group/n8n-nodes-nqdev
+```
+
+### In n8n Community Nodes
+
+1. In n8n, go to **Settings** → **Community Nodes**
+2. Click **Install a community node**
+3. Enter: `n8n-nodes-nqdev` (for npmjs) or `@nqdev-group/n8n-nodes-nqdev` (for GitHub Packages)
+4. Click **Install**
+5. Restart n8n
+
+For detailed installation and publishing instructions, see [PUBLISHING.md](./PUBLISHING.md).
+
+## Credentials
+
+### eSMS.vn API
+
+To use this node, you need:
+- API Key from eSMS.vn dashboard
+- Secret Key from eSMS.vn dashboard
+
+Get your credentials at: https://developers.esms.vn/
+
+## Operations
+
+### SMS Resource
+
+#### Send
+Send SMS OTP/CSKH message with the following options:
+- **Phone Number**: Recipient phone number in E.164 format (e.g., 84987654321)
+- **Content**: SMS message content
+- **SMS Type**: 
+  - Marketing (Brandname)
+  - CSKH (Customer Care) - recommended for OTP
+  - Fixed Number
+- **Brandname**: The sender name/brandname
+- **Sandbox Mode**: Enable for testing without actually sending
+
+### Zalo ZNS Resource
+
+#### Send
+Send Zalo ZNS message using templates:
+- **Phone Number**: Recipient phone number in E.164 format
+- **Template ID**: Approved Zalo ZNS template ID
+- **Template Data**: JSON object with template variables
+- **Tracking ID**: Optional tracking identifier
+- **Sandbox Mode**: Enable for testing
+
+## Error Handling
+
+The node includes comprehensive error handling based on eSMS.vn error codes:
+- 100: Success
+- 104: Insufficient balance
+- 114: Zalo template not approved
+- And more... (see [eSMS error codes](https://developers.esms.vn/esms-api/bang-ma-loi))
+
+## Resources
+
+- [eSMS.vn API Documentation](https://developers.esms.vn/)
+- [SMS API Reference](https://developers.esms.vn/esms-api/ham-gui-tin/tin-nhan-sms-otp-cskh)
+- [Zalo ZNS API Reference](https://developers.esms.vn/esms-api/ham-gui-tin/tin-nhan-zalo)
+- [Error Codes](https://developers.esms.vn/esms-api/bang-ma-loi)
+
+## License
+
+MIT
